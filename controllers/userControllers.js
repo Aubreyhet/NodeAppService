@@ -91,14 +91,14 @@ let findUserInfo = async (user_id) => {
 
 //修改用户信息详情方法
 let setUserInfo = async (user_id, age, sex, job, path, birthday) => {
-    if (findUserInfo(user_id)) {
+    if (await findUserInfo(user_id)) {
         let sql = `update userinfo set age=?,sex=?,job=?,path=?,birthday=? where user_id=?`;
-        let sqlArr = [user_id, age, sex, job, path, birthday];
+        let sqlArr = [age, sex, job, path, birthday, user_id];
         let res = await dbConfig.SySqlConnect(sql, sqlArr);
         if (res.affectedRows == 1) {
             let user = await getUser(user_id);
-            let userInfo = await getUserInfo(user_id)
-            user[0].userInfo = userinfo[0];
+            let userinfo = await getUserInfo(user_id)
+            user[0].userinfo = userinfo[0];
             return user
         } else {
             return false
@@ -109,8 +109,8 @@ let setUserInfo = async (user_id, age, sex, job, path, birthday) => {
         let res = await dbConfig.SySqlConnect(sql, sqlArr);
         if (res.affectedRows == 1) {
             let user = await getUser(user_id);
-            let userInfo = await getUserInfo(user_id)
-            user[0].userInfo = userinfo[0];
+            let userinfo = await getUserInfo(user_id)
+            user[0].userinfo = userinfo[0];
             return user
         } else {
             return false
@@ -277,11 +277,11 @@ editUserInfo = async (req, res) => {
     let { user_id, username, age, sex, job, path, birthday } = req.query;
     let result = await setUserName(user_id, username);
     if (result) {
-        let ress = await setUserInfo(username, age, sex, job, path, birthday);
+        let ress = await setUserInfo(user_id, age, sex, job, path, birthday);
         if (ress.length) {
             res.send({
                 'code': 200,
-                'data': res[0]
+                'data': ress[0]
             })
         } else {
             res.send({
