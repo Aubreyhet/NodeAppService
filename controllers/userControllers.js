@@ -181,97 +181,39 @@ codePhoneLogin = async (req, res) => {
 }
 //用户名或者手机号登录
 login = (req, res) => {
-    let username = req.query.username,
-        password = req.query.password;
-    let phone = /^1[3456789]\d{9}$/;
-    let email = /^[A-Za-zd]+([-_.][A-Za-zd]+)*@([A-Za-zd]+[-.])+[A-Za-zd]{2,5}$/;
-    if (phone.test(username)) {
-        let sql = `select * from user where phone=? and password=?`;
-        let sqlArr = [username, password, username, password];
-        let callBack = async (err, data) => {
-            if (err) {
-                console.log(err)
-                res.send({
-                    'code': 400,
-                    'msg': '出错了'
-                })
-            } else if (data == "") {
-                res.send({
-                    'code': 400,
-                    'msg': '手机号或密码出错',
-                    'data': []
-                })
-            } else {
-                let user_id = data[0].id;
-                let result = await getUserInfo(user_id);
-                data[0].userinfo = result[0];
-                res.send({
-                    'code': 200,
-                    'msg': '登录成功',
-                    'data': data[0]
-                })
-            }
+    let username = req.body.username,
+        password = req.body.password;
+    console.log(req.body)
+    let sql = `select * from user where username=? and password = ?`;
+    let sqlArr = [username, password];
+    console.log(username);
+    let callBack = async (err, data) => {
+        if (err) {
+            console.log(err)
+            res.send({
+                'code': 400,
+                'msg': '出错了'
+            })
+        } else if (data == "") {
+            console.log(username)
+            res.send({
+                'code': 400,
+                'msg': 'id或密码出错',
+                'data': []
+            })
+        } else {
+            let user_id = data[0].id;
+            let result = await getUserInfo(user_id);
+            data[0].userinfo = result[0];
+            res.send({
+                'code': 200,
+                'msg': '登录成功',
+                'data': data[0]
+            })
         }
-        dbConfig.sqlConnect(sql, sqlArr, callBack);
-    } else if (email.test(username)) {
-        let sql = `select * from user where email=? and password=?`;
-        let sqlArr = [username, password];
-        let callBack = async (err, data) => {
-            if (err) {
-                console.log(err)
-                res.send({
-                    'code': 400,
-                    'msg': '出错了'
-                })
-            } else if (data == "") {
-                res.send({
-                    'code': 400,
-                    'msg': '邮箱或密码出错',
-                    'data': []
-                })
-            } else {
-                let user_id = data[0].id;
-                let result = await getUserInfo(user_id);
-                data[0].userinfo = result[0];
-                res.send({
-                    'code': 200,
-                    'msg': '登录成功',
-                    'data': data[0]
-                })
-            }
-        }
-        dbConfig.sqlConnect(sql, sqlArr, callBack);
-    } else {
-        let sql = `select * from user where username=? and password=?`;
-        let sqlArr = [username, password];
-        let callBack = async (err, data) => {
-            if (err) {
-                console.log(err)
-                res.send({
-                    'code': 400,
-                    'msg': '出错了'
-                })
-            } else if (data == "") {
-                res.send({
-                    'code': 400,
-                    'msg': '用户名或密码出错',
-                    'data': []
-                })
-            } else {
-                let user_id = data[0].id;
-                let result = await getUserInfo(user_id);
-                data[0].userinfo = result[0];
-                res.send({
-                    'code': 200,
-                    'msg': '登录成功',
-                    'data': data[0]
-                })
-            }
-        }
-        dbConfig.sqlConnect(sql, sqlArr, callBack);
     }
+    dbConfig.sqlConnect(sql, sqlArr, callBack);
 }
-
 //修改资料
 editUserInfo = async (req, res) => {
     let { user_id, username, age, sex, job, path, birthday } = req.query;
