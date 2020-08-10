@@ -2,8 +2,6 @@ var express = require('express');
 var router = express.Router();
 var User = require('../controllers/userControllers')
 /* GET users listing. */
-router.post('/sendCode', User.sendCode);
-router.post('/codePhoneLogin', User.codePhoneLogin);
 router.post('/login', User.login);
-router.post('/editUserInfo', User.editUserInfo);
+router.post('/loginGetCode', User.loginGetCode);
 module.exports = router;

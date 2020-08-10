@@ -1,6 +1,6 @@
 var dbConfig = require('../util/dbconfig')
 //获取分类
-getCate = (req, res) => {
+loginGetCode = (req, res) => {
     var sql = 'select * from cate';
     var sqlArr = [];
     var callBack = (err, data) => {
@@ -32,6 +32,6 @@ getPostCate = (req, res) => {
     dbConfig.sqlConnect(sql, sqlArr, callBack);
 }
 module.exports = {
-    getCate,
+    loginGetCode,
     getPostCate
 }
