@@ -7,7 +7,8 @@ const jwt = require('jsonwebtoken');
 // token 密钥
 process.env.SECRET_KEY = 'secret';
 
-var dbConfig = require('../util/dbconfig')
+var dbConfig = require('../util/dbconfig');
+const { query } = require('express');
 function rand(min, max) {
     return Math.floor(Math.random() * (max - min)) + min
 }
@@ -140,7 +141,101 @@ login = (req, res) => {
     }
     dbConfig.sqlConnect(sql, sqlArr, callBack);
 }
+
+
+//获取用户列表
+getUserInfolist = (req, res) => {
+    console.log('进到获取用户列表函数')
+    console.log(req.query.query)
+    let pagenum = req.query.pagenum
+    let pagesize = req.query.pagesize
+    let forlike = `%${req.query.query}%`
+    console.log(pagesize)
+    let sql = `select * from user where username like ? limit ${pagenum},${pagesize}`
+    let sqlArr = [forlike]
+    let callBack = (err, data) => {
+        if (err) {
+            console.log(sql)
+            res.send({
+                'code': 400,
+                'msg': '获取用户列表失败',
+            })
+        } else {
+            console.log(sql)
+            res.send({
+                'total': 2000,
+                'code': 200,
+                'msg': '获取用户列表成功',
+                'data': Transformation(data),
+            })
+        }
+    }
+    dbConfig.sqlConnect(sql, sqlArr, callBack);
+}
+
+//添加用户
+addUserInfo = (req, res) => {
+    let username = req.body.username,
+        password = req.body.password,
+        email = req.body.email,
+        phone = req.body.phone;
+    console.log(req.body.username)
+    let sql = `INSERT INTO user (username,password,email,phone) VALUES (?,?,?,?)`;
+    let sqlArr = [username, password, email, phone];
+    let callBack = (err, data) => {
+        if (err) {
+            res.send({
+                'arr': sql,
+                'code': 400,
+                'msg': '用户信息添加失败'
+            })
+        } else {
+            res.send({
+                'code': 201,
+                'msg': '用户信息添加成功'
+            })
+        }
+    }
+    dbConfig.sqlConnect(sql, sqlArr, callBack);
+}
+userStateChange = (req, res) => {
+    let status = req.params.newstatus,
+        id = req.params.user_id
+    let sql = `UPDATE user SET status=? WHERE id = ?`;
+    let sqlArr = [status, id];
+    console.log(req.params)
+    let callBack = (err, data) => {
+        if (err) {
+            res.send({
+                'code': 400,
+                'msg': '用户状态更新失败,请刷新列表'
+            })
+        } else {
+            res.send({
+                'code': 200,
+                'msg': '用户状态更新成功',
+                'data': data
+            })
+        }
+    }
+    dbConfig.sqlConnect(sql, sqlArr, callBack);
+}
+
+
+// 取值类型转换
+Transformation = (arr) => {
+    for (let i = 0; i < arr.length; i++) {
+        if (arr[i].status !== 0) {
+            arr[i].status = true
+        } else { arr[i].status = false }
+    }
+    return arr
+}
+
 module.exports = {
     loginGetCode,
     login,
+    getUserInfolist,
+    userStateChange,
+    addUserInfo
 }

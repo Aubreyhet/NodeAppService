@@ -41,15 +41,23 @@ getMenu = (req, res) => {
     var sqlArr = [];
     var callBack = (err, data) => {
         if (err) {
-            console.log('连接出错了！')
+            res.send({
+                'code': 400,
+                'msg': '获取菜单列表失败',
+            })
         } else {
             res.send({
+                'code': 200,
+                'msg': '获取菜单列表成功',
                 'data': setTreeData(data)
             })
         }
     }
     dbConfig.sqlConnect(sql, sqlArr, callBack);
 }
+
+
+
 
 // toTreeData = (data, pid) => {
 //     tree = (id) => {
