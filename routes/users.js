@@ -6,11 +6,25 @@ router.post('/login', User.login);
 
 router.post('/loginGetCode', User.loginGetCode);
 
+router.post(`/adduserinfo`, User.addUserInfo)
+
 router.get('/getUserInfoList', User.getUserInfolist)
 
-router.put(`/:user_id/status/:newstatus`, User.userStateChange)
+router.get('/pagination', User.pagination)
 
-router.post(`/adduserinfo`, User.addUserInfo)
+//按照填入信息查询用户信息
+router.get('/inquiry', User.inquiry)
+
+//修改用户前通过id查询用户信息
+router.get('/modifyUser/:id', User.modifyUser)
+
+router.put('/:id/status/:status', User.userStateChange)
+
+router.post('/modifyUsered', User.modifyUsered)
+
+router.delete('/deleteuser/:id', User.deleteUser)
+
+
 
 
 module.exports = router;

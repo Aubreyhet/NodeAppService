@@ -7,6 +7,7 @@ var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+var rightsRouter = require('./routes/rights');
 
 var app = express();
 var http = require('http');
@@ -20,6 +21,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json())
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/rights', rightsRouter);
 server.listen('3000');
 
 app.all("*", function (req, res, next) {
