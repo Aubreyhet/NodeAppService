@@ -1,5 +1,13 @@
 const mysql = require('mysql')
+var db = mysql.createConnection({
+    host: 'localhost',
+    port: '3306',
+    user: 'root',
+    password: '123456',
+    database: 'nodeappdata'
+})
 module.exports = {
+
     //数据库配置
     config: {
         host: 'localhost',
@@ -15,7 +23,7 @@ module.exports = {
         pool.getConnection((err, conn) => {
             console.log('数据库连接成功！')
             if (err) {
-                console.log('连接失败！');
+                console.log('连接失败！' + err);
                 return;
             }
             //事件驱动回调
@@ -31,11 +39,13 @@ module.exports = {
             pool.getConnection((err, conn) => {
                 console.log('数据库连接成功！')
                 if (err) {
+                    console.log(err)
                     reject(err)
                 } else {
                     //事件驱动回调
                     conn.query(sql, sqlArr, (err, data) => {
                         if (err) {
+                            console.log(err)
                             reject(err)
                         } else {
                             resolve(data)
@@ -48,5 +58,6 @@ module.exports = {
         }).catch((err) => {
             console.log(err)
         })
-    }
+    },
+    db
 }

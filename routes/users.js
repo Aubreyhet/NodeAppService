@@ -10,6 +10,8 @@ router.post(`/adduserinfo`, User.addUserInfo)
 
 router.get('/getUserInfoList', User.getUserInfolist)
 
+router.post('/sendCoreCode', User.sendCoreCode)
+
 router.get('/pagination', User.pagination)
 
 //按照填入信息查询用户信息

@@ -7,12 +7,30 @@ const jwt = require('jsonwebtoken');
 // token 密钥
 process.env.SECRET_KEY = 'secret';
 
+//插入阿里大鱼插件
+const Core = require('@alicloud/pop-core');
+//引入配置文件
+const aliconfig = require('../util/aliconfig')
+//配置
+let client = new Core(aliconfig.alicloud)
+let requestOption = {
+    method: 'POST'
+};
+
 var dbConfig = require('../util/dbconfig');
+
 const { query } = require('express');
+
 const { connect } = require('../routes');
+
+const { db } = require('../util/dbconfig');
+
+//生成随机数
 function rand(min, max) {
     return Math.floor(Math.random() * (max - min)) + min
 }
+
+
 validitePhoneCode = [];
 let phoneCode
 let sendCodeP = (phone) => {
@@ -25,14 +43,13 @@ let sendCodeP = (phone) => {
 }
 
 
+
 //获取新注册用户详情方法
 let getUserInfo = (user_id) => {
     let sql = `select * from userinfo where user_id=?`;
     let sqlArr = [user_id];
     return dbConfig.SySqlConnect(sql, sqlArr);
 }
-
-//插入数据
 
 //模拟验证码接口
 sendCode = (phone) => {
@@ -56,11 +73,12 @@ sendCode = (phone) => {
     })
 }
 
-//登录用户名向手机发送验证码
-loginGetCode = (req, res) => {
+
+// 使用阿里大鱼向手机号发送验证码 使用需要调用
+sendCoreCode = (req, res) => {
     let j_number = req.body.j_number,
         password = req.body.password;
-    let sql = `select * from user where j_number=? and password = ?`;
+    let sql = `select id from user where j_number=${j_number} and password = ${password}`;
     let sqlArr = [j_number, password];
     let callBack = async (err, data) => {
         if (err) {
@@ -70,11 +88,68 @@ loginGetCode = (req, res) => {
                 'msg': '出错了'
             })
         } else if (data == "") {
-            console.log(username)
+            console.log(j_number)
             res.send({
                 'code': 400,
-                'msg': '工号或密码出错',
-                'data': []
+                'msg': '工号或密码出错'
+            })
+        } else {
+            let user_id = data[0].id;
+            console.log(user_id)
+            let userinfo = await getUserInfo(user_id);
+            console.log(userinfo)
+            let phone = userinfo[0].phone;
+            let code = rand(1000, 9999);
+            let params = {
+                "RegionId": "cn-hangzhou",
+                "PhoneNumbers": phone,
+                "SignName": "AubreyApp",
+                "TemplateCode": "SMS_200179648",
+                "TemplateParam": JSON.stringify({ "code": code })
+            }
+            client.request('SendSms', params, requestOption).then((result) => {
+                console.log(result)
+                if (result.Code == 'OK') {
+                    console.log(code)
+                    res.send({
+                        'code': 200,
+                        'msg': '验证码发送成功！'
+                    });
+                    validitePhoneCode.push({
+                        'phone': phone,
+                        'code': code
+                    })
+                } else {
+                    res.send({
+                        'code': 400,
+                        'msg': '验证码发送失败！'
+                    })
+                }
+            })
+        }
+    }
+    dbConfig.sqlConnect(sql, sqlArr, callBack);
+}
+
+
+//使用工号密码向手机发送验证码
+loginGetCode = (req, res) => {
+    let j_number = req.body.j_number,
+        password = req.body.password;
+    let sql = `select * from user where j_number=${j_number} and password = ${password}`;
+    let sqlArr = [j_number, password];
+    let callBack = async (err, data) => {
+        if (err) {
+            console.log(err)
+            res.send({
+                'code': 400,
+                'msg': '出错了'
+            })
+        } else if (data == "") {
+            console.log(j_number)
+            res.send({
+                'code': 400,
+                'msg': '工号或密码出错'
             })
         } else {
             let user_id = data[0].id;
@@ -114,8 +189,7 @@ login = (req, res) => {
             console.log(j_number)
             res.send({
                 'code': 400,
-                'msg': '工号或密码出错',
-                'data': []
+                'msg': '工号或密码出错'
             })
         } else {
             let token = jwt.sign({ data: data[0] }, process.env.SECRET_KEY, { expiresIn: 1440, });
@@ -123,6 +197,7 @@ login = (req, res) => {
                 res.send({
                     'code': 200,
                     'msg': '登录成功',
+                    'data': data[0],
                     'token': token
                 })
             } else {
@@ -225,18 +300,21 @@ addUserInfo = (req, res) => {
         phone = req.body.phone;
     console.log(req.body)
     console.log(req.body.name)
-    // let sql = `INSERT INTO user (password)VALUES (?);INSERT INTO userinfo (user_id,name,email,phone)VALUES ((SELECT LAST_INSERT_ID()),?,?,?)`;
-    let sql = 'INSERT INTO user (password)VALUES ("123456");INSERT INTO userinfo (user_id,age,name)VALUES ((SELECT LAST_INSERT_ID()),36,"zhang");'
+    let sql = `INSERT INTO user (password) VALUES ('123456');
+    INSERT INTO userinfo (user_id,name,email,phone)VALUES ((SELECT LAST_INSERT_ID()),'liusi','dda@dsf.com','13584805555')`;
     let sqlArr = [password, name, email, phone];
     let callBack = (err, data) => {
         console.log(sql)
         if (err) {
+            console.log(err)
             res.send({
-                'arr': sql,
+
                 'code': 400,
                 'msg': '用户信息添加失败'
             })
         } else {
+            console.log(data)
+
             res.send({
                 'code': 201,
                 'msg': '用户信息添加成功'
@@ -245,6 +323,56 @@ addUserInfo = (req, res) => {
     }
     dbConfig.sqlConnect(sql, sqlArr, callBack);
 }
+
+
+// addUserInfo = (req, res) => {
+//     let name = req.body.name,
+//         password = req.body.password,
+//         email = req.body.email,
+//         phone = req.body.phone;
+//     u_id
+//     db.query(`INSERT INTO userinfo (user_id,name,email,phone)VALUES ((SELECT LAST_INSERT_ID()),${name},${email},${phone})`, function (err, data) {
+//         if (err) {
+//             console.log(err)
+//             res.send({
+//                 'code': 400,
+//                 'msg': '用户信息添加失败'
+//             })
+//         } else {
+//             console.log(data)
+//             res.send({
+//                 'code': 201,
+//                 'msg': '用户信息添加成功'
+//             })
+//         }
+//     })
+// }
+
+// addUserInfo = (req, res) => {
+//     let name = req.body.name,
+//         password = req.body.password,
+//         email = req.body.email,
+//         phone = req.body.phone;
+//     db.query(`INSERT INTO userinfo (name,email,phone,password) VALUES (${name},${email},${phone},${password})`, function (err, data) {
+//         if (err) {
+//             console.log(err)
+//             res.send({
+//                 'code': 400,
+//                 'msg': '用户信息添加失败'
+//             })
+//         } else {
+//             console.log(data)
+//             res.send({
+//                 'code': 201,
+//                 'msg': '用户信息添加成功'
+//             })
+//         }
+//     })
+// }
+
+
+
+
 userStateChange = (req, res) => {
     let status = req.params.status,
         id = req.params.id
@@ -360,5 +488,7 @@ module.exports = {
     addUserInfo,
     modifyUser,
     modifyUsered,
-    deleteUser
+    deleteUser,
+    //使用阿里大鱼发送验证码接口
+    sendCoreCode,
 }
