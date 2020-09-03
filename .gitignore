@@ -12,4 +12,4 @@ yarn-error.log*
 *.ntvs*
 *.njsproj
 *.sln
-aliconfig.js
+/util/aliconfig.js
