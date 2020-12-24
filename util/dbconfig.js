@@ -1,6 +1,6 @@
 const mysql = require('mysql')
 var db = mysql.createConnection({
-    host: 'localhost',
+    host: '192.168.1.102',
     port: '3306',
     user: 'root',
     password: '123456',
@@ -10,7 +10,7 @@ module.exports = {
 
     //数据库配置
     config: {
-        host: 'localhost',
+        host: '192.168.1.102',
         port: '3306',
         user: 'root',
         password: '123456',
