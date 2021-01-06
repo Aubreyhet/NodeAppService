@@ -9,20 +9,26 @@ process.env.SECRET_KEY = 'secret';
 
 //插入阿里大鱼插件
 const Core = require('@alicloud/pop-core');
+
 //引入配置文件
-const aliconfig = require('../util/aliconfig')
+const aliconfig = require('../util/aliconfig');
+
 //配置
 let client = new Core(aliconfig.alicloud)
 let requestOption = {
     method: 'POST'
 };
 
+// 数据库配置
 var dbConfig = require('../util/dbconfig');
 
+// 导入express框架
 const { query } = require('express');
 
+// 路由模块
 const { connect } = require('../routes');
 
+// 数据模块
 const { db } = require('../util/dbconfig');
 
 //生成随机数
@@ -30,51 +36,17 @@ function rand(min, max) {
     return Math.floor(Math.random() * (max - min)) + min
 }
 
+// 存放生成验证码的数组
+let validitePhoneCode = [];
 
-validitePhoneCode = [];
-let phoneCode
-let sendCodeP = (phone) => {
-    for (var item of validitePhoneCode) {
-        if (phone == item.phone) {
-            return true
-        }
-    }
-    return false
-}
-
-
-
-//获取新注册用户详情方法
+// 获取新注册用户详情方法
 let getUserInfo = (user_id) => {
     let sql = `select * from userinfo where user_id=?`;
     let sqlArr = [user_id];
     return dbConfig.SySqlConnect(sql, sqlArr);
 }
 
-//模拟验证码接口
-sendCode = (phone) => {
-    if (sendCodeP(phone)) {
-        return ({
-            'code': 400,
-            'msg': '已经发送验证码,稍后再发'
-        })
-    }
-    let code = rand(1000, 9999);
-    validitePhoneCode.push({
-        'phone': phone,
-        'code': code
-    })
-    console.log(validitePhoneCode)
-    phoneCode = validitePhoneCode[validitePhoneCode.length - 1].code
-    console.log('验证码' + phoneCode)
-    return ({
-        'code': 200,
-        'msg': '发送成功'
-    })
-}
-
-
-// 使用阿里大鱼向手机号发送验证码 使用需要调用
+// 使用阿里大鱼向手机号发送验证码 使用需要调用 （发送验证码之后将此验证码删除掉）
 sendCoreCode = (req, res) => {
     let j_number = req.body.j_number,
         password = req.body.password;
@@ -99,26 +71,25 @@ sendCoreCode = (req, res) => {
             let userinfo = await getUserInfo(user_id);
             console.log(userinfo)
             let phone = userinfo[0].phone;
-            let code = rand(1000, 9999);
+            let phoneCode = rand(1000, 9999);
             let params = {
                 "RegionId": "cn-hangzhou",
                 "PhoneNumbers": phone,
                 "SignName": "AubreyApp",
                 "TemplateCode": "SMS_200179648",
-                "TemplateParam": JSON.stringify({ "code": code })
+                "TemplateParam": JSON.stringify({ "code": phoneCode })
             }
             client.request('SendSms', params, requestOption).then((result) => {
                 console.log(result)
-                if (result.Code == 'OK') {
-                    console.log(code)
+                if (result.Code == 'OK') {                   
+                    validitePhoneCode.push({
+                        'j_number':j_number,
+                        'phoneCode':phoneCode
+                    })
                     res.send({
                         'code': 200,
-                        'msg': '验证码发送成功！'
-                    });
-                    validitePhoneCode.push({
-                        'phone': phone,
-                        'code': code
-                    })
+                        'msg': '验证码发送成功',
+                    })            
                 } else {
                     res.send({
                         'code': 400,
@@ -132,7 +103,7 @@ sendCoreCode = (req, res) => {
 }
 
 
-//使用工号密码向手机发送验证码
+//使用工号密码向手机发送验证码(发送验证码之后将此验证码删除掉)
 loginGetCode = (req, res) => {
     let j_number = req.body.j_number,
         password = req.body.password;
@@ -152,15 +123,16 @@ loginGetCode = (req, res) => {
                 'msg': '工号或密码出错'
             })
         } else {
-            let user_id = data[0].id;
-            let result = await getUserInfo(user_id);
-            let phone = result[0].phone;
+            let phoneCode = rand(1000,9999);
+            validitePhoneCode.push({
+                'j_number':j_number,
+                'phoneCode':phoneCode
+            })
             res.send({
                 'code': 200,
                 'msg': '验证码发送成功',
             })
-            console.log(phone);
-            sendCode(phone);
+            console.log(phoneCode);
         }
     }
     dbConfig.sqlConnect(sql, sqlArr, callBack);
@@ -175,7 +147,8 @@ login = (req, res) => {
     console.log('前端传来的testcode' + testcode);
     console.log('j_number' + j_number);
     console.log('前端的password' + password);
-    console.log('后端保存的testcode' + phoneCode);
+    // 此时需要根据前台传来的j_number去到validitePhoneCode数组中循环遍历寻找存在数组中的验证码
+    console.log('后台数组保存的验证码' + forCodeArr(j_number));
     let sql = `select * from user where j_number=? and password = ?`;
     let sqlArr = [j_number, password];
     let callBack = async (err, data) => {
@@ -193,13 +166,14 @@ login = (req, res) => {
             })
         } else {
             let token = jwt.sign({ data: data[0] }, process.env.SECRET_KEY, { expiresIn: 1440, });
-            if (testcode == phoneCode) {
+            if (forCodeArr(j_number)==testcode) {
                 res.send({
                     'code': 200,
                     'msg': '登录成功',
                     'data': data[0],
                     'token': token
                 })
+
             } else {
                 res.send({
                     'code': 200,
