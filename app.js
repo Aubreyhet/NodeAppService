@@ -22,7 +22,7 @@ app.use(bodyParser.json())
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/rights', rightsRouter);
-server.listen('3000');
+server.listen('3001');
 
 app.all("*", function (req, res, next) {
     //设置允许跨域的域名，*代表允许任意域名跨域

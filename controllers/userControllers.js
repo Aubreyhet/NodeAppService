@@ -148,7 +148,7 @@ login = (req, res) => {
     console.log('j_number' + j_number);
     console.log('前端的password' + password);
     // 此时需要根据前台传来的j_number去到validitePhoneCode数组中循环遍历寻找存在数组中的验证码
-    console.log('后台数组保存的验证码' + forCodeArr(j_number));
+    // console.log('后台数组保存的验证码' + forCodeArr(j_number));
     let sql = `select * from user where j_number=? and password = ?`;
     let sqlArr = [j_number, password];
     let callBack = async (err, data) => {
